@@ -61,3 +61,10 @@ Repeatability. Evals should change because the system changed, not because of sa
 ### Your task for Day 1–2
 1. Run the commands in the README; first `--limit 5`, then the full 100.
 2. Open `results/baseline.json`, look at 10 failures. Write down *why* each failed (wrong total? date missing? company cut off?). That list becomes the agent's validation tools in Week 2.
+
+### Day 1 bug log — "Found 0 labelled receipts"
+- **Symptom:** the loader found 0 receipts and the eval then crashed with `ZeroDivisionError`.
+- **Root cause:** I assumed the OCR box files were `.txt`; in this dataset they are `data/box/*.csv` (same line format, different extension). The answers are `data/key/*.json`.
+- **Fix:** match box files by both extensions, prefer the `box/` folder, and make the eval exit with a clear message on an empty test set instead of dividing by zero.
+- **Lesson (good interview story):** validate your data assumptions first — print counts after every loading step. A silent "0 rows" upstream turns into a confusing crash downstream.
+- The fixed 100-receipt `test.jsonl` is now committed, so results are reproducible without re-downloading.
