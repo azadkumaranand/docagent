@@ -29,9 +29,12 @@ receipt (OCR text / image)
 
 ## Results
 
+100 SROIE receipts, exact match after per-field normalisation. Mean field accuracy for the baseline: **82.3%** — yet only **half** the receipts come out fully correct, i.e. every second document still needs a human.
+
+
 | Extractor | Company | Address | Date | Total | Docs fully correct | Cost / receipt | Latency |
 |---|---|---|---|---|---|---|---|
-| Baseline (single prompt) | _tbd_ | _tbd_ | _tbd_ | _tbd_ | _tbd_ | _tbd_ | _tbd_ |
+| Baseline (single prompt, gpt-4o-mini) | 75.0% | 86.0% | 82.0% | 86.0% | **50.0%** | $0.00010 | 1.87 s |
 | Agent (LangGraph) | — | — | — | — | — | — | — |
 
 ## Run it
