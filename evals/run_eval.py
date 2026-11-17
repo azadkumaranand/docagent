@@ -30,6 +30,8 @@ def load_test(limit: int | None):
 def main(extractor_name: str, limit: int | None) -> None:
     extractor = importlib.import_module(f"docagent.{extractor_name}")
     rows = load_test(limit)
+    if not rows:
+        sys.exit("Test set is empty. Run: python data/download_sroie.py --n 100")
     details, exact = [], {f: 0 for f in FIELDS}
     fuzzy = {f: 0 for f in FIELDS}
     all_correct = cost = latency = 0.0

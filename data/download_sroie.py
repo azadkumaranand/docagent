@@ -1,8 +1,8 @@
 """Download SROIE receipts and build a fixed test set.
 
 SROIE (ICDAR 2019) = ~1000 real scanned receipts. For each receipt it gives:
-  - a .txt file: one OCR text box per line ->  x1,y1,x2,y2,x3,y3,x4,y4,TEXT
-  - a .json file: the correct answers   ->  {company, address, date, total}
+  - a .csv/.txt file (data/box): one OCR text box per line ->  x1,y1,x2,y2,x3,y3,x4,y4,TEXT
+  - a .json file (data/key): the correct answers ->  {company, address, date, total}
 
 Output: data/sroie/test.jsonl  (one receipt per line: id, ocr_text, labels)
 
@@ -45,8 +45,12 @@ def main(n: int) -> None:
     if not RAW.exists():
         subprocess.run(["git", "clone", "--depth", "1", REPO, str(RAW)], check=True)
 
-    # Find every answer JSON, then the OCR .txt with the same file name.
-    txt_by_id = {p.stem: p for p in RAW.rglob("*.txt")}
+    # Find every answer JSON, then the OCR box file (.csv or .txt) with the same file name.
+    txt_by_id = {}
+    for ext in ("*.txt", "*.csv"):
+        for p in RAW.rglob(ext):
+            if "box" in p.parts or p.stem not in txt_by_id:
+                txt_by_id[p.stem] = p
     records = []
     for jp in RAW.rglob("*.json"):
         try:
