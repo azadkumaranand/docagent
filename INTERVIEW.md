@@ -15,3 +15,8 @@ Answer format for every question: **Point → Reason → Proof → Trade-off** (
 
 ## 4. The agent reaches 90% fully correct at 3× the cost. Worth it?
 > Compare against the cost of a human fixing documents. 3× of $0.0001 is $0.0003 per receipt; a person spending two minutes on one receipt costs about a thousand times more. Going from 50% to 90% removes 40 manual fixes per 100 receipts, so yes — unless latency matters more, like real-time checkout. Then I'd route only low-confidence receipts through the agent.
+
+## 5. Why did you track cost and latency, not just accuracy?
+> At scale, cost and speed matter as much as accuracy. At 1 million receipts a day the baseline costs about $100/day ($0.0001 each) — far cheaper than people. But at 1.87 s per receipt, one-at-a-time processing would take ~22 days, so I'd need ~25 parallel workers. Tracking both also drives retry design: a temporary server error is worth retrying, but a wrong answer shouldn't be retried blindly — every retry adds cost and latency. I retry only with specific feedback, and only when the accuracy gain justifies the cost.
+
+**Rule: always say a number.**
