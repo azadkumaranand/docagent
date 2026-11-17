@@ -13,7 +13,7 @@ from datetime import datetime
 from difflib import SequenceMatcher
 
 DATE_FORMATS = ["%d/%m/%Y", "%d-%m-%Y", "%d.%m.%Y", "%d/%m/%y", "%d-%m-%y", "%d.%m.%y",
-                "%Y-%m-%d", "%Y/%m/%d", "%d %b %Y", "%d %B %Y", "%b %d, %Y", "%d-%b-%Y", "%d %b %y"]
+                "%Y-%m-%d", "%Y/%m/%d", "%Y%m%d", "%d %b %Y", "%d %B %Y", "%b %d, %Y", "%d-%b-%Y", "%d %b %y"]
 
 
 def norm_text(s: str) -> str:
@@ -23,7 +23,7 @@ def norm_text(s: str) -> str:
 
 
 def norm_date(s: str) -> str:
-    s = s.strip()
+    s = s.strip().strip("()[]").strip()  # labels like "(06/12/2016)"
     for fmt in DATE_FORMATS:
         try:
             return datetime.strptime(s, fmt).strftime("%Y-%m-%d")

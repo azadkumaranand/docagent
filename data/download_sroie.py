@@ -4,7 +4,9 @@ SROIE (ICDAR 2019) = ~1000 real scanned receipts. For each receipt it gives:
   - a .csv/.txt file (data/box): one OCR text box per line ->  x1,y1,x2,y2,x3,y3,x4,y4,TEXT
   - a .json file (data/key): the correct answers ->  {company, address, date, total}
 
-Output: data/sroie/test.jsonl  (one receipt per line: id, ocr_text, labels)
+Output (one receipt per line: id, ocr_text, labels):
+  data/sroie/test.jsonl     - 100 receipts used for development and error analysis
+  data/sroie/holdout.jsonl  - 100 different receipts, never inspected, for the final score
 
 Why a FIXED test set (seed 42)?
 Every experiment (baseline, agent v1, agent v2...) must run on the SAME
@@ -22,7 +24,7 @@ REPO = "https://github.com/zzzDavid/ICDAR-2019-SROIE.git"
 ROOT = Path(__file__).parent
 RAW = ROOT / "raw_sroie"
 OUT = ROOT / "sroie"
-KEYS = {"company", "address", "date", "total"}
+KEYS = ("address", "date", "company", "total")  # a tuple, not a set: fixed order -> identical output every run
 
 
 def ocr_lines_to_text(txt_path: Path) -> str:
@@ -57,7 +59,7 @@ def main(n: int) -> None:
             labels = json.loads(jp.read_text(encoding="utf-8", errors="ignore"))
         except json.JSONDecodeError:
             continue
-        if not isinstance(labels, dict) or not KEYS.issubset(labels):
+        if not isinstance(labels, dict) or not set(KEYS).issubset(labels):
             continue
         txt = txt_by_id.get(jp.stem)
         if txt is None:
@@ -67,13 +69,15 @@ def main(n: int) -> None:
 
     records.sort(key=lambda r: r["id"])
     random.Random(42).shuffle(records)
-    test = records[:n]
+    splits = {"test": records[:n], "holdout": records[n:2 * n]}
 
     OUT.mkdir(exist_ok=True)
-    with open(OUT / "test.jsonl", "w", encoding="utf-8") as f:
-        for r in test:
-            f.write(json.dumps(r, ensure_ascii=False) + "\n")
-    print(f"Found {len(records)} labelled receipts -> wrote {len(test)} to {OUT/'test.jsonl'}")
+    print(f"Found {len(records)} labelled receipts")
+    for name, rows in splits.items():
+        with open(OUT / f"{name}.jsonl", "w", encoding="utf-8") as f:
+            for r in rows:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        print(f"  wrote {len(rows)} to {OUT / (name + '.jsonl')}")
 
 
 if __name__ == "__main__":

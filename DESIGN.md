@@ -50,3 +50,41 @@ You can't improve what you don't measure. Before building any agent, we build th
 - **Fix:** match box files by both extensions, prefer the `box/` folder, and make the eval exit with a clear message on an empty test set instead of dividing by zero.
 - **Lesson:** validate your data assumptions first — print counts after every loading step. A silent "0 rows" upstream turns into a confusing crash downstream.
 - The fixed 100-receipt `test.jsonl` is now committed, so results are reproducible without re-downloading.
+
+---
+
+## 2. Error analysis → agent design
+
+### What the baseline got wrong (100 test receipts, 71 failed fields)
+| Error type | Count | Fix |
+|---|---|---|
+| Company includes registration number, e.g. `99 SPEED MART S/B (519537-X)` | ~20 | deterministic cleaner (regex) |
+| Date includes time, e.g. `20-06-2018 13:11:45` | ~16 | deterministic cleaner |
+| Total = cash handed over or change given, not the bill | ~14 | validation tool + LLM retry with feedback |
+| Address differences — mostly branch codes / OCR typos in the gold labels | ~14 | none: label noise, left as is |
+| Scorer couldn't parse `(06/12/2016)`, `20180428` | 2 | scorer fix, baseline re-scored (`evals/rescore.py`) |
+
+### Principle: code where the rule is certain, LLM where judgement is needed
+- **Cleaners** (`tools.py`) fix certain patterns: free, instant, 100% repeatable. Alone they lift docs-fully-correct from **50% → 72%**, breaking zero fields.
+- **Validators** check the answer against the receipt's own text and return human-readable issues. The agent sends those issues back to the LLM, so a retry is *targeted*, not blind.
+
+### Tuning the total validator: precision vs recall
+| Version | Caught | Missed | False alarms |
+|---|---|---|---|
+| v1 — "total equals cash and a smaller total exists" | 8 | 6 | **14** |
+| v2 — only when real change exists and cash − change is printed | 4 | 10 | 2 |
+| v3 — v2 + skip ambiguous "cash = 2 × total" | 4 | 10 | **0** |
+
+A false alarm costs an extra LLM call and risks the model "fixing" a correct answer, so v3 deliberately trades recall for precision.
+
+### Agent graph (LangGraph)
+`extract → clean → validate → done | retry (≤2, with feedback) | human review`
+- `MAX_RETRIES = 2` caps cost and latency at 3 LLM calls per receipt.
+- Receipts still failing after 2 retries are **flagged for human review** instead of silently passing.
+- Nodes are small pure functions; tests drive the loop with a fake LLM (`tests/test_agent.py`).
+
+### Avoiding test-set overfitting
+The cleaners and validators were designed by reading failures on the **test** split. To report an honest number, a second **holdout** split of 100 unseen receipts (`data/sroie/holdout.jsonl`) is scored once at the end.
+
+### Bug log
+- **Non-deterministic dataset file.** Label keys were stored in a Python `set`, whose order varies between runs, so regenerating `test.jsonl` produced a different file with identical content. Fixed with a tuple; regeneration is now byte-identical.

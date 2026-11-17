@@ -31,3 +31,8 @@ def test_address_fuzzy_catches_near_miss():
 def test_wrong_value_fails():
     assert field_match("total", "8.00", "9.00") == (False, False)
     assert field_match("company", "", "STARBUCKS") == (False, False)
+
+
+def test_date_with_brackets_or_compact_format():
+    assert norm_date("(06/12/2016)") == "2016-12-06"
+    assert norm_date("20180428") == norm_date("2018-04-28") == "2018-04-28"

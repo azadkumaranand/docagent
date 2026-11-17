@@ -5,16 +5,16 @@
     "exact_accuracy": {
       "company": 0.75,
       "address": 0.86,
-      "date": 0.82,
+      "date": 0.84,
       "total": 0.86
     },
     "fuzzy_accuracy": {
       "company": 0.75,
       "address": 0.92,
-      "date": 0.82,
+      "date": 0.84,
       "total": 0.86
     },
-    "field_accuracy_mean": 0.823,
+    "field_accuracy_mean": 0.828,
     "docs_fully_correct": 0.5,
     "avg_cost_usd": 0.000103,
     "avg_latency_s": 1.87
@@ -1388,7 +1388,7 @@
         "date": {
           "pred": "2018-04-28",
           "gold": "20180428",
-          "exact": false
+          "exact": true
         },
         "total": {
           "pred": "19.99",
@@ -2038,7 +2038,7 @@
         "date": {
           "pred": "06/12/2016",
           "gold": "(06/12/2016)",
-          "exact": false
+          "exact": true
         },
         "total": {
           "pred": "111.90",
