@@ -59,7 +59,7 @@ data/download_sroie.py     # dataset → fixed 100-receipt test set (seed 42)
 evals/metrics.py           # per-field normalisers + exact / fuzzy matching
 evals/run_eval.py          # runs any extractor, writes results/<name>.json
 tests/test_metrics.py      # tests for the scorer itself
-LEARNING.md                # design decisions, explained day by day
+DESIGN.md                  # design decisions and engineering log
 ```
 
 ## Dataset

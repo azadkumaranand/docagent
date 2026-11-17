@@ -1,10 +1,10 @@
-# LEARNING.md — what was built, and why
+# DESIGN.md — design decisions and engineering log
 
-Read this before every interview. Each day ends with the questions an interviewer is likely to ask, and the answer in your own words.
+Why DocAgent is built the way it is, and what broke along the way.
 
 ---
 
-## Day 1 — Evaluation harness + baseline
+## 1. Evaluation harness + baseline
 
 ### The big idea
 You can't improve what you don't measure. Before building any agent, we build the **ruler** (the eval) and take the **"before" photo** (the baseline). Week 2's agent is only interesting if it beats this number on the *same* receipts.
@@ -44,27 +44,9 @@ You can't improve what you don't measure. Before building any agent, we build th
 
 **`tests/test_metrics.py`** — tests for the scorer itself. If the ruler is wrong, every number is wrong.
 
-### Likely interview questions
-
-**Q: How did you evaluate your extraction pipeline?**
-A fixed test set of 100 real receipts, field-level exact match after per-field normalisation, plus a fuzzy score to separate near-misses from real errors, plus document-level accuracy, cost and latency per receipt. Baseline and agent run on the identical set.
-
-**Q: Why not just compare strings?**
-Formatting differences aren't extraction errors. Without normalisation the metric would penalise "RM 9.00" vs "9.00" and the number would mislead.
-
-**Q: Why build a baseline first?**
-To prove the agent adds value and to quantify the trade-off — extra accuracy vs extra cost and latency. Without it, "the agent is better" is just a claim.
-
-**Q: Why temperature 0?**
-Repeatability. Evals should change because the system changed, not because of sampling noise.
-
-### Your task for Day 1–2
-1. Run the commands in the README; first `--limit 5`, then the full 100.
-2. Open `results/baseline.json`, look at 10 failures. Write down *why* each failed (wrong total? date missing? company cut off?). That list becomes the agent's validation tools in Week 2.
-
-### Day 1 bug log — "Found 0 labelled receipts"
+### Bug log — "Found 0 labelled receipts"
 - **Symptom:** the loader found 0 receipts and the eval then crashed with `ZeroDivisionError`.
-- **Root cause:** I assumed the OCR box files were `.txt`; in this dataset they are `data/box/*.csv` (same line format, different extension). The answers are `data/key/*.json`.
+- **Root cause:** The loader assumed the OCR box files were `.txt`; in this dataset they are `data/box/*.csv` (same line format, different extension). The answers are `data/key/*.json`.
 - **Fix:** match box files by both extensions, prefer the `box/` folder, and make the eval exit with a clear message on an empty test set instead of dividing by zero.
 - **Lesson (good interview story):** validate your data assumptions first — print counts after every loading step. A silent "0 rows" upstream turns into a confusing crash downstream.
 - The fixed 100-receipt `test.jsonl` is now committed, so results are reproducible without re-downloading.
