@@ -1,0 +1,50 @@
+# Manual run: real LLM evals. Needs the OPENAI_API_KEY repository secret.
+# Commits the results JSON files back to the repo so every number is traceable.
+name: eval
+on:
+  workflow_dispatch:
+    inputs:
+      extractors:
+        description: "Space-separated extractors"
+        default: "baseline baseline_clean agent"
+      splits:
+        description: "Space-separated splits"
+        default: "test holdout"
+      limit:
+        description: "Receipts per run (empty = all)"
+        default: ""
+permissions:
+  contents: write
+concurrency: eval
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    env:
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      LLM_PROVIDER: openai
+      LLM_MODEL: gpt-4o-mini
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+      - name: Run evals
+        run: |
+          LIMIT=""
+          if [ -n "${{ inputs.limit }}" ]; then LIMIT="--limit ${{ inputs.limit }}"; fi
+          for s in ${{ inputs.splits }}; do
+            for e in ${{ inputs.extractors }}; do
+              echo "::group::$e on $s"
+              python evals/run_eval.py --extractor "$e" --split "$s" $LIMIT | tail -15 | tee -a summary.txt
+              echo "::endgroup::"
+            done
+          done
+          cat summary.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit results
+        run: |
+          git config user.name "Azad Kumar"
+          git config user.email "azadanand9798@gmail.com"
+          git add results/
+          git diff --cached --quiet || git commit -m "Eval results: ${{ inputs.extractors }} on ${{ inputs.splits }}"
+          git push
